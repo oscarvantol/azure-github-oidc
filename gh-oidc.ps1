@@ -1,17 +1,13 @@
 
 
-$AppName = 'HelloWorld2'
-$Repo = 'betabit-workshop/app-ui'
+$AppName = 'SomeThing'
+$Repo = 'orgname/reponame'
 
 
-az account show -o table
-
-gh auth login
 $SubId = (az account show --query id -o tsv)
 $TenantId = (az account show --query tenantId -o tsv)
 
 $AppId=$(az ad app list --filter "displayName eq '$AppName'" --query [].appId -o tsv)
-
 if ($AppId -eq null)
 {
    $AppId=$(az ad app create --display-name ${AppName} --query appId -o tsv)
@@ -19,7 +15,6 @@ if ($AppId -eq null)
 
 
 $ServicePrincipal=$(az ad sp list --filter "appId eq '$AppId'" --query [].id -o tsv)
-
 if ($ServicePrincipal -eq null)
 {
    $ServicePrincipal=$(az ad sp create --id $AppId --query id -o tsv)
@@ -27,10 +22,6 @@ if ($ServicePrincipal -eq null)
 }
  
 $AppObjectId=$(az ad app show --id $AppId --query id -o tsv)
-
-
-az rest --method GET --uri "https://graph.microsoft.com/beta/applications/$AppObjectId/federatedIdentityCredentials"
-
 
 $prFic = ConvertTo-Json(@{
   "name"= "prfic"
@@ -52,6 +43,8 @@ $mainFic = ConvertTo-Json(@{
 }) 
 $mainFicBody = $mainFic -replace "`"", "\`""
 az rest --method POST --uri "https://graph.microsoft.com/beta/applications/$AppObjectId/federatedIdentityCredentials" --headers "Content-Type=application/json" --body $mainFicBody
+
+az rest --method GET --uri "https://graph.microsoft.com/beta/applications/$AppObjectId/federatedIdentityCredentials"
 
 
 Write-Output AZURE_CLIENT_ID=$AppId
